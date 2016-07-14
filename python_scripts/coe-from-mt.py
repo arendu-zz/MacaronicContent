@@ -10,12 +10,12 @@ import sys
 import operator
 import itertools
 
-reload(sys)
+'''reload(sys)
 sys.setdefaultencoding('utf-8')
 sys.stdin = codecs.getreader('utf-8')(sys.stdin)
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 sys.stdout.encoding = 'utf-8'
-
+'''
 VIS_LANG = 'de'
 INPUT_LANG = 'de'
 USE_SPLIT = False
@@ -105,7 +105,7 @@ def detect_split_reorderings(input_tok_group, output_tok_group):
             # print 'discontiguous input', c, i, interrupting_group
             sp_in_out = output_tok_group.index(i)
             interrupting_group_lr = [('left' if (output_tok_group.index(ig) < sp_in_out)  else 'right') for ig in
-                                     interrupting_group]
+                    interrupting_group]
             split_inp[i] = (interrupting_group, interrupting_group_lr)
             involved_graphs = set((interrupting_group + [i]))
             # o1 = [ix for ix in output_tok_group if ix in involved_graphs]
@@ -121,9 +121,9 @@ def detect_split_reorderings(input_tok_group, output_tok_group):
 
         elif len(c) == 1:
             pass
-            # print 'contiguous input'
-        else:
-            pass
+        # print 'contiguous input'
+    else:
+        pass
 
     for i in set(output_tok_group):
         tmp = [idx_x for idx_x, x in enumerate(output_tok_group) if x == i]
@@ -138,7 +138,7 @@ def detect_split_reorderings(input_tok_group, output_tok_group):
             # print 'discontiguous output', c, i, interrupting_group
             sp_in_inp = input_tok_group.index(i)
             interrupting_group_lr = [('left' if (input_tok_group.index(ig) < sp_in_inp) else 'right') for ig in
-                                     interrupting_group]
+                    interrupting_group]
             split_out[i] = (interrupting_group, interrupting_group_lr)
 
             involved_graphs = set((interrupting_group + [i]))
@@ -151,9 +151,9 @@ def detect_split_reorderings(input_tok_group, output_tok_group):
                 split_orderings[i] = {'split_ordering': o1, 'unsplit_ordering': o2}
         elif len(c) == 1:
             pass
-            # print 'contiguous ouput'
-        else:
-            pass
+        # print 'contiguous ouput'
+    else:
+        pass
 
     return split_inp, split_out, split_orderings
 
@@ -510,16 +510,12 @@ if __name__ == '__main__':
     (options, _) = opt.parse_args()
     if options.input_mt == '' or options.output_mt == '' or options.input_parse == '' or options.output_stem == '':
         logit(
-            'Usage: python coe-from-mt.py -i INPUT_MT -o OUTPUT_MT -e INTERMEDIATE_EDGES -p INPUT_MT_PARSED -s SPLIT_STRING --out OUTPUT_STEM\n',
-            10)
+                'Usage: python coe-from-mt.py -i INPUT_MT -o OUTPUT_MT -e INTERMEDIATE_EDGES -p INPUT_MT_PARSED -s SPLIT_STRING --out OUTPUT_STEM\n',
+                10)
         exit(-1)
     else:
         pass
-    if options.split_string == '':
-        USE_SPLIT = False
-        logit('no split string, split every 5 sentences')
-    else:
-        USE_SPLIT = True
+    USE_SPLIT = False
     is_demo = int(options.is_demo) == 1
     input_parsed = get_dep_parse(options.input_parse)
     input_mt = codecs.open(options.input_mt, 'r', 'utf-8').readlines()
@@ -538,23 +534,9 @@ if __name__ == '__main__':
     all_coe_sentences = []
     coe_sentences = []
     sentences_used = []
-    for sent_idx, (input_line, output_line, input_parse) in enumerate(zip(input_mt, output_mt, input_parsed)[52:73]):
-        if len(input_line.split()) < 3 or len(input_line.split()) > 25:
-            # SKIP SHORT AND LONG SENTENCES
-            pass #continue
+    for sent_idx, (input_line, output_line, input_parse) in enumerate(zip(input_mt, output_mt, input_parsed)[:]):
         logit('len all coe ' + str(len(all_coe_sentences)) + ' len coe ' + str(
             len(coe_sentences)) + ' using split: ' + str(USE_SPLIT) + 'split string:' + options.split_string + '\n')
-        if USE_SPLIT:
-            if input_line.lower().strip() == options.split_string.lower().strip():
-                if len(coe_sentences) > 0:
-                    all_coe_sentences.append(coe_sentences)
-                coe_sentences = []
-                continue
-        else:
-            if len(coe_sentences) == 10:
-                all_coe_sentences.append(coe_sentences)
-                coe_sentences = []
-
         logit('SENT' + str(sent_idx) + '\n')
         input_sent = input_line.strip().split()
         sentences_used.append(str(sent_idx) + "\t" + input_line.strip())
@@ -613,7 +595,7 @@ if __name__ == '__main__':
                     input_coverage[inp_span[0] + iu_idx] = 1
                     input_tok_group[inp_span[0] + iu_idx] = group_idx
                     n = Node(node_idx, input_sent[inp_span[0] + iu_idx], None, inp_span[0] + iu_idx, DE_LANG,
-                             VIS_LANG == DE_LANG, True, False, False)
+                            VIS_LANG == DE_LANG, True, False, False)
                     n.frequency = input_histogram[n.s.lower()]
                     node_idx += 1
                     to_nodes.append(n)
@@ -623,7 +605,7 @@ if __name__ == '__main__':
                     assert out_phrase[ou_idx] == output_sent[out_span[0] + ou_idx]
                     output_tok_group[out_span[0] + ou_idx] = group_idx
                     n = Node(node_idx, output_sent[out_span[0] + ou_idx], out_span[0] + ou_idx, None, EN_LANG,
-                             VIS_LANG == EN_LANG, False, True, False)
+                            VIS_LANG == EN_LANG, False, True, False)
                     node_idx += 1
                     from_nodes.append(n)
 
@@ -636,7 +618,7 @@ if __name__ == '__main__':
                 coe_graph.nodes = from_nodes + to_nodes
                 coe_graph.edges = make_edges(from_nodes, to_nodes)
                 coe_graph.edges = make_edges_with_intermediate_nodes(from_nodes, to_nodes,
-                                                                     intermediate=intermediate_nodes, graph=coe_graph)
+                        intermediate=intermediate_nodes, graph=coe_graph)
                 coe_sentence.graphs.append(coe_graph)
                 group_idx += 1
                 # pprint(final_groups)
@@ -650,8 +632,8 @@ if __name__ == '__main__':
         logit(' '.join([str(i) for i in output_tok_group]) + '\n')
 
         split_inp, split_out, split_orderings = detect_split_reorderings(
-            input_tok_group,
-            output_tok_group)
+                input_tok_group,
+                output_tok_group)
         split_sets = get_split_sets(split_inp, split_out)
         swap_rules = get_swap_rules(coe_sentence, input_tok_group, output_tok_group, input_parse, split_sets, VIS_LANG)
         if len(swap_rules) > 0:
@@ -756,12 +738,17 @@ if __name__ == '__main__':
     logit('done' + str(eps_word_alignment) + ' errors\n', priority=10)
     # FLATTEN THE LIST
     all_coe_sentences = list(itertools.chain.from_iterable(all_coe_sentences))
+    all_json_sent_str = json.dumps(all_coe_sentences, indent=4, sort_keys=True)
+    f = codecs.open(options.output_stem + '.json', 'w', 'utf8')
+    f.write(all_json_sent_str)
+    f.flush()
+    f.close()
     logit('size:' + str(len(all_coe_sentences)) + '\n', priority=10)
     main_coe_sentences = all_coe_sentences[:-1]
     preview_coe_sentences = all_coe_sentences[-1:]
     main_output = '\n'.join(['var json_str_arr = ' + str(main_coe_sentences), 'module.exports.Story1 = json_str_arr'])
     preview_output = '\n'.join(
-        ['var json_str_arr = ' + str(preview_coe_sentences), 'module.exports.Preview = json_str_arr'])
+            ['var json_str_arr = ' + str(preview_coe_sentences), 'module.exports.Preview = json_str_arr'])
     main_sentences = '\n'.join(sentences_used[:-1])
     preview_sentences = '\n'.join(sentences_used[-1:])
     f = codecs.open(options.output_stem + '.state', 'w', 'utf8')
@@ -788,10 +775,4 @@ if __name__ == '__main__':
     f.write(preview_sentences)
     f.flush()
     f.close()
-
-
-
-
-
-
 

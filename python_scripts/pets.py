@@ -2,6 +2,7 @@
 __author__ = 'arenduchintala'
 from itertools import groupby, product
 import sys
+import pdb
 
 
 class SplitNode(object):
@@ -132,9 +133,9 @@ def potential_split_points(alignment):
 def get_splits(alignment, idx_a, idx_g):
     # print alignment, idx_a, idx_g, 'try to find splits'
     min_a = min(alignment)
-    # a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
-    a_mon = potential_split_points(alignment)
-    a_monotonic = a_mon
+    a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
+    #a_mon = potential_split_points(alignment)
+    #a_monotonic = a_mon
     splits = []
     for m in range(1, len(alignment)):
         is_split = a_monotonic[m] and a_monotonic[m - 1]
@@ -233,16 +234,18 @@ def get_split_sets(split_inp, split_out):
 
 def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, split_sets, vis_lang):
     rules = []
-    # input_unique = [i[0] for i in groupby(input_tok_group)]
-    # output_unique = [i[0] for i in groupby(output_tok_group)]
-    input_unique, input_idx = get_unique(input_tok_group)
-    output_unique, output_idx = get_unique(output_tok_group)
+    input_unique = [i[0] for i in groupby(input_tok_group)]
+    output_unique = [i[0] for i in groupby(output_tok_group)]
+    #input_unique, input_idx = get_unique(input_tok_group)
+    #output_unique, output_idx = get_unique(output_tok_group)
     alignment = [output_unique.index(i) for i in input_unique]
     alignment_idx = range(len(alignment))
     min_a = min(alignment)
     a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
     a_monotonic_new = a_monotonic
     a_monotonic_new = [a_monotonic[idx + 1 - 1: idx + 1 + 2].count(0) == 0 for idx, am in enumerate(a_monotonic[1:])]
+    print a_monotonic_new
+    #pdb.set_trace()
     list_of_lists = []
     prev_split = 0
     for idx, am in enumerate(a_monotonic_new):
@@ -276,12 +279,14 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
                     legal = True
                     head = 0
                     if swaps:
-                        # print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
+                        #print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
                         legal, head = check_for_heads(dep_parse, coe_sentence, gidx1, gidx2, vis_lang)
-                    if legal or True:
+                    if legal:
                         sn_child = SplitNode(s1, s2, s_idx1, s_idx2, gidx1, gidx2, swaps, head)
                         sn.add_child(sn_child, 1)
                         _stack.append(sn_child)
+                    else:
+                        print 'blocking illeagal swap', gidx1, gidx2
                 if len(splits) == 0:
                     # print 'no splits for', sn.split1
                     pass
@@ -293,9 +298,9 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
                     legal = True
                     head = 0
                     if swaps:
-                        # print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
+                        #print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
                         legal, head = check_for_heads(dep_parse, coe_sentence, gidx1, gidx2, vis_lang)
-                    if legal or True:
+                    if legal:
                         sn_child = SplitNode(s1, s2, s_idx1, s_idx2, gidx1, gidx2, swaps, head)
                         sn.add_child(sn_child, 2)
                         _stack.append(sn_child)
@@ -411,4 +416,4 @@ if __name__ == '__main__':
         rules = root_node.get_one_derivation(align, rules)
         for r in rules:
             print r
-        '''
+            '''
