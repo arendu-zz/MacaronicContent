@@ -4,18 +4,18 @@ import codecs
 from optparse import OptionParser
 from itertools import groupby, product
 from collection_of_edits import Sentence, Node, Graph, EN_LANG, DE_LANG, START, END, get_edges, Swap
-from pets import get_swap_rules, get_split_sets
+from pets import get_swap_rules, get_split_sets, in_order
 import json
 import sys
 import operator
 import itertools
 
-'''reload(sys)
+reload(sys)
 sys.setdefaultencoding('utf-8')
 sys.stdin = codecs.getreader('utf-8')(sys.stdin)
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 sys.stdout.encoding = 'utf-8'
-'''
+
 VIS_LANG = 'de'
 INPUT_LANG = 'de'
 USE_SPLIT = False
@@ -531,6 +531,7 @@ if __name__ == '__main__':
     assert len(input_mt) == len(output_mt)
     sent_idx = 0
     eps_word_alignment = 0
+    reorder_failed = 0
     all_coe_sentences = []
     coe_sentences = []
     sentences_used = []
@@ -641,6 +642,11 @@ if __name__ == '__main__':
                 logit('swaps-pets:' + str(sr) + '\n')
         else:
             logit("no swap rules...\n")
+            if in_order(input_tok_group):
+                pass
+            else:
+                reorder_failed +=1
+                logit("could not reorder sentence...")
 
         split_inp_str = ' '.join([str(i) + "-" + ','.join([str(k) for k in j[0]]) for i, j in split_inp.items()])
         logit('split inp:' + split_inp_str + '\n')
@@ -735,7 +741,7 @@ if __name__ == '__main__':
         coe_sentences.append(' '.join(json_sentence_str.split()))
     if len(coe_sentences) > 0:
         all_coe_sentences.append(coe_sentences)
-    logit('done' + str(eps_word_alignment) + ' errors\n', priority=10)
+    logit('done\n' + str(reorder_failed + eps_word_alignment) + ' errors\n', priority=10)
     # FLATTEN THE LIST
     all_coe_sentences = list(itertools.chain.from_iterable(all_coe_sentences))
     all_json_sent_str = json.dumps(all_coe_sentences, indent=4, sort_keys=True)

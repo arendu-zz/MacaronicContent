@@ -12,25 +12,46 @@ class SplitNode(object):
         assert len(sp1) == len(o_idx1)
         assert len(sp2) == len(o_idx2)
         self.split1 = sp1
+        self.split2 = sp2
         self.o_idx1 = o_idx1
         self.o_idx2 = o_idx2
         self.g_idx1 = g_idx1
         self.g_idx2 = g_idx2
-        self.split2 = sp2
+        self.fullg = g_idx1 + g_idx2
+        self.g1_in_order = in_order(self.g_idx1)
+        self.g2_in_order = in_order(self.g_idx2)
         self.parent = None
         self.children1 = []
         self.children2 = []
         self.swap = swap
         self.head = head
+        print 'new split', str(self)
+
 
     def __str__(self):
-        return str(self.swap) + str(self.head) + str(self.g_idx1) + str(self.g_idx2)
+        self_str = ""
+        self_str += "swap:" + str(self.swap) 
+        self_str += " head:" + str(self.head) 
+        self_str += " g1:" + str(self.g_idx1) 
+        self_str += " g1_in_order:" + str(self.g1_in_order) 
+        self_str += " group2:" + str(self.g_idx2)
+        self_str += " g2_in_order:" + str(self.g2_in_order) 
+        self_str += " span:" + str(self.g_idx1 + self.g_idx2) 
+
+        return self_str
 
     def keep_one(self):
+        print 'parent', str(self), 'num c1', len(self.children1),'g1 in order', self.g1_in_order,  'num c2', len(self.children2), 'g2 in order', self.g2_in_order
         if len(self.children1) > 1:
+            for c in self.children1[1:]:
+                print 'removing', str(c)
             self.children1 = self.children1[:1]
+            print 'keeping', self.children1[0]
         if len(self.children2) > 1:
+            for c in self.children2[1:]:
+                print 'removing', str(c)
             self.children2 = self.children2[:1]
+            print 'keeping', self.children2[0]
         for c in self.children1:
             c.keep_one()
         for c in self.children2:
@@ -38,10 +59,11 @@ class SplitNode(object):
         return True
 
     def get_one_derivation(self, p, rules=[]):
+        print 'one derivation', str(self)
         rules.append((self.swap, self.g_idx1, self.g_idx2, p, self.head))
-        for c in self.children1:
+        for c in self.children1[:1]:
             c.get_one_derivation(self.split1, rules)
-        for c in self.children2:
+        for c in self.children2[:1]:
             c.get_one_derivation(self.split2, rules)
         return rules
 
@@ -93,25 +115,6 @@ def check_consistency2(split1, split2):
     else:
         return True
 
-
-def check_consistency(split1_a, split2_a, a):
-    print split1_a, split2_a
-    assert isinstance(split1_a, list)
-    assert isinstance(split2_a, list)
-    inp_span_1 = min(split1_a), max(split1_a) + 1
-    inp_span_2 = min(split2_a), max(split2_a) + 1
-    out_span_1 = 0, len(split1_a)
-    out_span_2 = len(split1_a), len(split1_a + split2_a)
-    inp_in_a1 = len([i for i in a if inp_span_1[0] <= i < inp_span_1[1]])
-    inp_in_a2 = len([i for i in a if inp_span_2[0] <= i < inp_span_2[1]])
-    out_in_a1 = out_span_1[1] - out_span_1[0]
-    out_in_a2 = out_span_2[1] - out_span_2[0]
-    if inp_in_a1 == out_in_a1 and inp_in_a2 == out_in_a2:
-        return True
-    else:
-        return False
-
-
 def potential_split_points(alignment):
     split_points = []
     for idx, a in enumerate(alignment):
@@ -132,35 +135,33 @@ def potential_split_points(alignment):
 
 def get_splits(alignment, idx_a, idx_g):
     # print alignment, idx_a, idx_g, 'try to find splits'
-    min_a = min(alignment)
-    a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
+    #min_a = min(alignment)
+    #a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
     #a_mon = potential_split_points(alignment)
     #a_monotonic = a_mon
     splits = []
+    alignment_in_order = in_order(alignment)
+    if alignment_in_order:
+        print 'already in order', alignment
+        return splits
+    print 'trying to split', alignment
     for m in range(1, len(alignment)):
-        is_split = a_monotonic[m] and a_monotonic[m - 1]
-        if m < len(alignment) - 1:
-            is_split = is_split and a_monotonic[m + 1]
+        split1_a = alignment[:m]
+        split1_idx = idx_a[:m]
+        split1_g = idx_g[:m]
+        split2_a = alignment[m:]
+        split2_idx = idx_a[m:]
+        split2_g = idx_g[m:]
+        if check_consistency2(split1_a, split2_a):
+            print 'splitting', m
+            min_1 = min(split1_a)
+            min_2 = min(split2_a)
+            swaps = min_1 > min_2
+            splits.append((split1_a, split2_a, split1_idx, split2_idx, split1_g, split2_g, swaps))
         else:
+            print 'skipping', m
             pass
-        if not is_split:
-            split1_a = alignment[:m]
-            split1_idx = idx_a[:m]
-            split1_g = idx_g[:m]
-            split2_a = alignment[m:]
-            split2_idx = idx_a[m:]
-            split2_g = idx_g[m:]
-            # if check_consistency(split1_a, split2_a, a):
-            if check_consistency2(split1_a, split2_a):
-                # print 'splitting', m
-                min_1 = min(split1_a)
-                min_2 = min(split2_a)
-                swaps = min_1 > min_2
-                splits.append((split1_a, split2_a, split1_idx, split2_idx, split1_g, split2_g, swaps))
-            else:
-                # print 'skipping', m
-                pass
-    # print 'found', len(splits), 'splits'
+    print 'found', len(splits), 'splits for span', alignment
     return splits
 
 
@@ -208,6 +209,14 @@ def check_for_heads(dep_parse, coe_sentence, gidx1, gidx2, vis_lang):
         # print 'not a valid split', g1_g2, g1_g1, g2_g1, g2_g2
         return False, 0  # not a valid split
 
+def in_order(lst):
+    order = True
+    for i in range(1, len(lst)):
+        if lst[i] >= lst[i-1]:
+            pass
+        else:
+            return False
+    return True
 
 def get_unique(tok_group):
     u = set([])
@@ -234,18 +243,16 @@ def get_split_sets(split_inp, split_out):
 
 def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, split_sets, vis_lang):
     rules = []
-    input_unique = [i[0] for i in groupby(input_tok_group)]
-    output_unique = [i[0] for i in groupby(output_tok_group)]
-    #input_unique, input_idx = get_unique(input_tok_group)
-    #output_unique, output_idx = get_unique(output_tok_group)
+    #input_unique = [i[0] for i in groupby(input_tok_group)]
+    #output_unique = [i[0] for i in groupby(output_tok_group)]
+    input_unique, input_idx = get_unique(input_tok_group)
+    output_unique, output_idx = get_unique(output_tok_group)
     alignment = [output_unique.index(i) for i in input_unique]
     alignment_idx = range(len(alignment))
     min_a = min(alignment)
     a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
     a_monotonic_new = a_monotonic
     a_monotonic_new = [a_monotonic[idx + 1 - 1: idx + 1 + 2].count(0) == 0 for idx, am in enumerate(a_monotonic[1:])]
-    print a_monotonic_new
-    #pdb.set_trace()
     list_of_lists = []
     prev_split = 0
     for idx, am in enumerate(a_monotonic_new):
@@ -275,11 +282,10 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
             if len(sn.split1) > 1:
                 splits = get_splits(sn.split1, sn.o_idx1, sn.g_idx1)
                 for s1, s2, s_idx1, s_idx2, gidx1, gidx2, swaps in splits:
-                    # print s1, 'splits ', s2, 'base', sn.split1
                     legal = True
                     head = 0
                     if swaps:
-                        #print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
+                        print  gidx1, 'swaps with',  gidx2
                         legal, head = check_for_heads(dep_parse, coe_sentence, gidx1, gidx2, vis_lang)
                     if legal:
                         sn_child = SplitNode(s1, s2, s_idx1, s_idx2, gidx1, gidx2, swaps, head)
@@ -287,9 +293,6 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
                         _stack.append(sn_child)
                     else:
                         print 'blocking illeagal swap', gidx1, gidx2
-                if len(splits) == 0:
-                    # print 'no splits for', sn.split1
-                    pass
 
             if len(sn.split2) > 1:
                 splits = get_splits(sn.split2, sn.o_idx2, sn.g_idx2)
@@ -298,17 +301,18 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
                     legal = True
                     head = 0
                     if swaps:
-                        #print s1, s_idx1, gidx1, 'swaps with', s2, s_idx2, gidx2
+                        print  gidx1, 'swaps with',  gidx2
                         legal, head = check_for_heads(dep_parse, coe_sentence, gidx1, gidx2, vis_lang)
                     if legal:
                         sn_child = SplitNode(s1, s2, s_idx1, s_idx2, gidx1, gidx2, swaps, head)
                         sn.add_child(sn_child, 2)
                         _stack.append(sn_child)
-                if len(splits) == 0:
-                    # print 'no splits for', sn.split2
-                    pass
+                    else:
+                        print 'blocking illeagal swap', gidx1, gidx2
 
-        root_node.keep_one()
+
+        #print '******* keep one ********'
+        #root_node.keep_one()
         rs = root_node.get_one_derivation(align, rs)
 
         # rules += [r for r in rs if r[0]]
@@ -324,96 +328,4 @@ def get_swap_rules(coe_sentence, input_tok_group, output_tok_group, dep_parse, s
 
 
 if __name__ == '__main__':
-    '''
-    alignment = [0, 4, 0, 3, 2, 1, 5, 6, 7, 8, 10, 9, 11]
-    input_tok_group = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14, 13, 15, 16, 17, 18, 19, 22, 20, 20, 21, 21,
-                       23, 24, 25, 26, 27, 28, 29, 30, 31]
-    output_tok_group = [0, 1, 2, 3, 4, 5, 7, 6, 8, 9, 10, 11, 12, 13, 15, 14, 16, 17, 19, 18, 21, 20, 22, 23, 24, 25,
-                        27, 26, 28, 29, 30, 31]
-    # input_tok_group = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14, 13, 15, 16, 17, 18, 19, 22, 20, 20, 21, 21,
-    # 23, 24, 25]
-    # output_tok_group = [0, 1, 2, 3, 4, 5, 7, 6, 8, 9, 10, 11, 12, 13, 15, 14, 16, 17, 19, 18, 21, 20, 22, 23, 24, 25]
-
-    # input_tok_group = [0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 10, 12, 13, 14, 14, 14, 15]
-    # output_tok_group = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 10, 13, 12, 14, 15]
-    # alignment = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 9, 11]
-    input_unique = [i[0] for i in groupby(input_tok_group)]
-    output_unique = [i[0] for i in groupby(output_tok_group)]
-    alignment = [output_unique.index(i) for i in input_unique]
-    alignment_idx = range(len(alignment))
-    min_a = min(alignment)
-    a_monotonic = [abs(idx - a) == min_a for idx, a in enumerate(alignment)]
-    a_monotonic_new = [a_monotonic[idx - 1: idx + 2].count(0) == 0 for idx, am in enumerate(a_monotonic)]
-    list_of_lists = []
-    prev_split = 0
-    for idx, am in enumerate(a_monotonic_new):
-        if idx > 0:
-            if am != a_monotonic_new[idx - 1]:
-                sub_list = a_monotonic_new[prev_split:idx]
-                sub_alignment = alignment[prev_split:idx]
-                sub_alignment_idx = alignment_idx[prev_split:idx]
-                prev_split = idx
-                if False in sub_list:
-                    list_of_lists.append((sub_alignment, sub_alignment_idx))
-        if idx == len(a_monotonic_new) - 1:
-            sub_list = a_monotonic_new[prev_split:]
-            sub_alignment = alignment[prev_split:]
-            sub_alignment_idx = alignment_idx[prev_split:]
-            if False in sub_list:
-                list_of_lists.append((sub_alignment, sub_alignment_idx))
-
-    for s in get_splits(a, 0, len(a)):
-        print 'splits:', s[0], 'and', s[1]
-
-    a = [0, 4, 3, 2, 1]
-    for s in get_splits(a, 0, 5):
-        print 'splits:', s[0], s[1]
-
-    a = [4, 3, 2, 1]
-    for s in get_splits(a, 0, 4):
-        print 'splits:', s[0], s[1]
-
-    a = [4, 3, 2, 1, 0]
-    for s in get_splits(a, 0, 5):
-        print 'splits:', s[0], s[1]
-
-    print 'wtf'
-    for align, align_idx in list_of_lists:
-        root_node = SplitNode([], align, [], align_idx, False)
-        _stack = [root_node]
-        rules = []
-        while len(_stack) > 0:
-            sn = _stack.pop()
-            sp1 = sn.split1
-            idx1 = sn.o_idx1
-            sp2 = sn.split2
-            idx2 = sn.o_idx2
-            if len(sp1) > 1:
-                splits = get_splits(sp1, idx1)
-                for s1, s2, s_idx1, s_idx2, swaps in splits:
-                    legal = True
-                    head = 0
-                    if swaps:
-                        print s1, s2, 'swap', s_idx1, s_idx2
-                    if legal:
-                        sn_child = SplitNode(s1, s2, s_idx1, s_idx2, swaps, head)
-                        sn.add_child(sn_child, 1)
-                        _stack.append(sn_child)
-
-            if len(sp2) > 1:
-                splits = get_splits(sp2, idx2)
-                for s1, s2, s_idx1, s_idx2, swaps in splits:
-                    legal = True
-                    head = 0
-                    if swaps:
-                        print s1, s2, 'swaps', s_idx1, s_idx2
-                    if legal:
-                        sn_child = SplitNode(s1, s2, s_idx1, s_idx2, swaps, head)
-                        sn.add_child(sn_child, 2)
-                        _stack.append(sn_child)
-        root_node.keep_one()
-        # print 'ok'
-        rules = root_node.get_one_derivation(align, rules)
-        for r in rules:
-            print r
-            '''
+    pass

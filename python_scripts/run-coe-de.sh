@@ -1,9 +1,11 @@
 #!/bin/sh
 set -e
-./un-preorder.py -o ../data/de/nachrichtenleicht/nachrichtenleicht.de.tok -i ../data/de/nachrichtenleicht/nachrichtenleicht.de.unsplit -a ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa > ../data/de/nachrichtenleicht/nachrichtenleicht.de.alignment
-./untangle-wa.py -i ../data/de/nachrichtenleicht/nachrichtenleicht.de.unsplit -o ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa > ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa.untangled
-./true-align.py -w ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa.untangled -a ../data/de/nachrichtenleicht/nachrichtenleicht.de.alignment > ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa.untangled.true.aligned
-./coe-from-mt.py -i ../data/de/nachrichtenleicht/nachrichtenleicht.de.tok -o ../data/de/nachrichtenleicht/nachrichtenleicht.de.wa.untangled.true.aligned -e ../data/de/nachrichtenleicht/nachrichtenleicht.de.tok.edges.uniq.intermediate -p ../data/de/nachrichtenleicht/nachrichtenleicht.de.tok.dep.parsed  -s Artikel --out  ../data/de/nachrichtenleicht/nachrichtenleicht.de
-cp ../data/de/nachrichtenleicht/nachrichtenleicht.de.js ../stories/nachrichtenleicht.de.js
-cp ../data/de/nachrichtenleicht/nachrichtenleicht.de.preview.js ../stories/nachrichtenleicht.de.preview.js
+FOLDER="../data/de/nachrichtenleicht-batch2"
+
+./un-preorder.py -o $FOLDER/nachrichtenleicht.de.tok -i $FOLDER/nachrichtenleicht.de.unsplit -a $FOLDER/nachrichtenleicht.de.wa > $FOLDER/nachrichtenleicht.de.alignment
+./untangle-wa.py -i $FOLDER/nachrichtenleicht.de.unsplit -o $FOLDER/nachrichtenleicht.de.wa > $FOLDER/nachrichtenleicht.de.wa.untangled
+./true-align.py -w $FOLDER/nachrichtenleicht.de.wa.untangled -a $FOLDER/nachrichtenleicht.de.alignment > $FOLDER/nachrichtenleicht.de.wa.untangled.true.aligned
+./coe-from-mt.py -i $FOLDER/nachrichtenleicht.de.tok -o $FOLDER/nachrichtenleicht.de.wa.untangled.true.aligned -e $FOLDER/nachrichtenleicht.de.tok.edges.uniq.intermediate -p $FOLDER/nachrichtenleicht.de.tok.dep.parsed   --out  $FOLDER/nachrichtenleicht.de
+echo "nachrichtenleicht.de.js saved in '$FOLDER'"
+echo "nachrichtenleicht.de.preview.js saved in '$FOLDER'"
 

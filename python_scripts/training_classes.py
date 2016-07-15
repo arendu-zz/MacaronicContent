@@ -95,7 +95,7 @@ class Guess(dict):
     def __init__(self, id, guess, revealed, l2_word):
         dict.__init__(self)
         self.__dict__ = self
-        Guess.spell = enchant.DictWithPWL("en_US", "../data/vocab/en.vocab.50k")
+        Guess.spell = enchant.DictWithPWL("en_US", "../data/vocab/en.vocab.100k")
         Guess.spell_german = enchant.request_pwl_dict(
             '../data/de/nachrichtenleicht-filtered/nachrichtenleicht.de.vocab')
         Guess.ed = EditDistance(None)
