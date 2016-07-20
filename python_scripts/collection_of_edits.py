@@ -325,6 +325,42 @@ class Sentence(dict):
         self.initial_order_by = EN_LANG
         self.graphs = []
 
+    def merge_graphs(self, gids):
+        de_merge_lst = []
+        en_merge_lst = []
+        replace_en = None
+        replace_de = None
+        for g in self.graphs:
+            if g.id in gids:
+                for n in g.nodes:
+                    if n.lang == 'en':
+                        en_merge_lst.append((n.en_id, n))
+                    else:
+                        de_merge_lst.append((n.de_id,n))
+            else:
+                pass
+        self.graphs = [g for g in self.graphs if g.id not in gids] 
+        new_gid = sorted(gids)[int(len(gids)//2)]
+        en_merge_lst.sort()
+        de_merge_lst.sort()
+        en_merged =  '@@@'.join([n[1].s for n in en_merge_lst])
+        merge_node_en = en_merge_lst[0][1]
+        merge_node_en.s = en_merged
+        de_merged =  '@@@'.join([n[1].s for n in de_merge_lst])
+        merge_node_de = de_merge_lst[0][1]
+        merge_node_de.s = de_merged
+        new_graph = Graph(new_gid)
+        new_graph.nodes = [merge_node_en, merge_node_de]
+        new_graph.edges = get_edges(merge_node_en, merge_node_de) 
+        self.graphs.append(new_graph)
+        #TODO: make 2 nodes make new graph and remove old graphs.. hope it works
+        #n = Node(dict_['id'], dict_['s'], dict_['en_id'], dict_['de_id'], dict_['lang'], dict_['visible'],
+        #         dict_['to_en'],
+        #         dict_['to_de'], dict_['ir'])
+        #n.visible_order = dict_['visible_order']
+
+
+        
     def get_graph_by_id(self, gid):
         for g in self.graphs:
             if g.id == gid:

@@ -39,7 +39,11 @@ def check_initial_orders(sent_obj, vis_lang):
     sys.stderr.write('en: ' + sent_obj.en + '\n')
     sys.stderr.write(' '.join(vis_toks) + '\n')
     sys.stderr.write(' '.join(vis_node_toks) + '\n')
-
+    vis_node_toks = [v.split('@@@') for v in vis_node_toks]
+    vis_node_toks= sum(vis_node_toks, []) #flatten list of lists
+    #[item for sublist in vis_node_toks for item in sublist]
+    #print vis_node_toks
+    #print vis_toks
     for v_n_tok, v_tok in zip(vis_node_toks, vis_toks):
         sys.stderr.write(v_n_tok + ' vs ' + v_tok + '\n')
         assert v_n_tok == v_tok
@@ -531,7 +535,7 @@ if __name__ == '__main__':
     assert len(input_mt) == len(output_mt)
     sent_idx = 0
     eps_word_alignment = 0
-    reorder_failed = 0
+    reorder_failed = []
     all_coe_sentences = []
     coe_sentences = []
     sentences_used = []
@@ -553,7 +557,6 @@ if __name__ == '__main__':
 
         logit('input sent:' + ' '.join(input_sent) + '\n')
         logit('output sent:' + ' '.join(output_sent) + '\n')
-
         coe_sentence = Sentence(sent_idx, ' '.join(input_sent), ' '.join(output_sent), None)
         coe_sentence.initial_order_by = VIS_LANG
 
@@ -632,11 +635,9 @@ if __name__ == '__main__':
         logit(' '.join([str(i) for i in input_tok_group]) + '\n')
         logit(' '.join([str(i) for i in output_tok_group]) + '\n')
 
-        split_inp, split_out, split_orderings = detect_split_reorderings(
-                input_tok_group,
-                output_tok_group)
+        split_inp, split_out, split_orderings = detect_split_reorderings(input_tok_group,output_tok_group)
         split_sets = get_split_sets(split_inp, split_out)
-        swap_rules = get_swap_rules(coe_sentence, input_tok_group, output_tok_group, input_parse, split_sets, VIS_LANG)
+        swap_rules, non_itg_spans = get_swap_rules(coe_sentence, input_tok_group, output_tok_group, input_parse, split_sets, VIS_LANG)
         if len(swap_rules) > 0:
             for sr in swap_rules:
                 logit('swaps-pets:' + str(sr) + '\n')
@@ -645,7 +646,7 @@ if __name__ == '__main__':
             if in_order(input_tok_group):
                 pass
             else:
-                reorder_failed +=1
+                reorder_failed += [coe_sentence]
                 logit("could not reorder sentence...")
 
         split_inp_str = ' '.join([str(i) + "-" + ','.join([str(k) for k in j[0]]) for i, j in split_inp.items()])
@@ -733,6 +734,10 @@ if __name__ == '__main__':
                 assert n.en_id is not None and n.de_id is not None
 
         coe_sentence.set_initial_node_orders(VIS_LANG)
+        print non_itg_spans, 'HERE'
+        for non_itg_span in non_itg_spans:
+            coe_sentence.merge_graphs(non_itg_span)
+        #TODO: fix this hard coded part!!!
         propagate_split_info(coe_sentence)
         check_initial_orders(coe_sentence, VIS_LANG)
         # logit('done sent' + str(sent_idx) + '\n')
@@ -741,7 +746,9 @@ if __name__ == '__main__':
         coe_sentences.append(' '.join(json_sentence_str.split()))
     if len(coe_sentences) > 0:
         all_coe_sentences.append(coe_sentences)
-    logit('done\n' + str(reorder_failed + eps_word_alignment) + ' errors\n', priority=10)
+    logit('done\n' + str(len(reorder_failed) + eps_word_alignment) + ' errors\n', priority=10)
+    for cs in reorder_failed:
+        print 'failed:', cs.en, cs.de
     # FLATTEN THE LIST
     all_coe_sentences = list(itertools.chain.from_iterable(all_coe_sentences))
     all_json_sent_str = json.dumps(all_coe_sentences, indent=4, sort_keys=True)

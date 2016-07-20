@@ -25,15 +25,22 @@ if __name__ == '__main__':
     print len(tok_data), len(json_data)
     article_lines = []
     article_count = 0
-    for tok,jd in zip(tok_data, json_data):
-        if tok.strip() == 'Artikel':
-            article_json_str = json.dumps(article_lines, indent=4, sort_keys = True)
-            w = codecs.open(options.out_folder +'/article' + str(article_count) + '.json' , 'w', 'utf8')
-            w.write(article_json_str)
-            w.flush()
-            w.close()
-            article_count += 1
-            article_lines = []
+    title = None
+    for jd_line, (tok,jd) in enumerate(zip(tok_data, json_data)):
+        if tok.strip() == 'Artikel' or tok.strip() == '&lt; NEW _ STORY &gt;':
+            if len(article_lines) > 0:
+                article_json_str = json.dumps(article_lines, indent=4, sort_keys = True)
+                w = codecs.open(options.out_folder +'/' + title + '.json' , 'w', 'utf8')
+                w.write(article_json_str)
+                w.flush()
+                w.close()
+                title = None
+                article_count += 1
+                article_lines = []
+            else:
+                pass    
         else:
+            if len(article_lines) == 0:
+                title = tok.strip()
             article_lines.append(jd)
 
