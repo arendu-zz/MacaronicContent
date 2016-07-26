@@ -11,7 +11,7 @@ REORDER_SWAP_TYPE = 'swap reorder'
 REORDER_TRANSFER = 'transfer reorder'
 REORDER_SEPARATES = 'separation reorder'
 
-# ed = EditDistance(None)
+edObj = EditDistance(None)
 
 
 class Edge(dict):
@@ -23,6 +23,7 @@ class Edge(dict):
         assert isinstance(to_id, list)
         self.to_id = to_id
         self.direction = direction
+        self.edit_distance = None
 
     def __str__(self):
         return self.direction + ',' + str(','.join([str(i) for i in self.from_id])) + '->' + str(
@@ -47,6 +48,7 @@ class Node(dict):
         self.visible = visible
         self.visible_order = None
         self.frequency = None
+        self.string_edit_dist = None
         self.graph = None
         self.er_lang = "en"
         self.to_en = to_en
@@ -135,6 +137,7 @@ class Graph(dict):
 
         self.split_order_by_de = None
         self.split_order_by_en = None
+        self.graph_edit_distance  = None
 
     @staticmethod
     def from_dict(dict_):
@@ -165,6 +168,13 @@ class Graph(dict):
 
     def __str__(self):
         return str(self.id) + ',' + ','.join([str(i) for i in self.nodes])
+    
+    def compute_edit_distance(self):
+        self.graph_edit_distance = sum([e.edit_distance for e in self.edges])
+        self.graph_edit_distance = self.graph_edit_distance / len(self.edges)
+        if (self.graph_edit_distance >= 0.5):
+            self.graph_edit_distance = 0.9
+        return self.graph_edit_distance 
 
     def cognate_visibility(self, vis_lang):
         # Assumes input language in de and output en
@@ -388,6 +398,10 @@ class Sentence(dict):
 def get_edges(n1, n2):
     e1 = Edge([n1.id], [n2.id], DE_LANG)
     e2 = Edge([n2.id], [n1.id], EN_LANG)
+    ed_score = edObj.edscore(n1.s, n2.s)
+    e1.edit_distance = ed_score
+    e2.edit_distance = ed_score
+    print n1.s, n2.s, ed_score
     return [e1, e2]
 
 
