@@ -16,6 +16,7 @@ if __name__ == '__main__':
     opt.add_option('-j', dest='json_list_file')
     opt.add_option('-t', dest='tok_file')
     opt.add_option('-o', dest='out_folder')
+    opt.add_option('-c', dest='category')
     (options, _) = opt.parse_args()
 
     json_data = json.loads(codecs.open(options.json_list_file, 'r' , 'utf8').read())
@@ -26,11 +27,12 @@ if __name__ == '__main__':
     article_lines = []
     article_count = 0
     title = None
+    category = options.category.title()
     for jd_line, (tok,jd) in enumerate(zip(tok_data, json_data)):
         if tok.strip() == 'Artikel' or tok.strip() == '&lt; NEW _ STORY &gt;':
             if len(article_lines) > 0:
                 article_json_str = json.dumps(article_lines, indent=4, sort_keys = True)
-                w = codecs.open(options.out_folder +'/' + title + '.json' , 'w', 'utf8')
+                w = codecs.open(options.out_folder +'/' + category + '.' + title + '.json' , 'w', 'utf8')
                 w.write(article_json_str)
                 w.flush()
                 w.close()
@@ -42,5 +44,6 @@ if __name__ == '__main__':
         else:
             if len(article_lines) == 0:
                 title = tok.strip()
+                title = title.replace('@', '')
             article_lines.append(jd)
 
