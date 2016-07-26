@@ -19,8 +19,8 @@ class EditDistance(object):
 
 
     def edscore(self, a, b):
-        ed = self.editdistance(a, b)
-        edr = ed / float(max(len(a), len(b)))
+        ed = self.editdistance_simple(a, b)
+        edr = ed[0] / float(max(len(a), len(b)))
         return 1.0 - edr
 
     def alignmentdistance(self, a, b):
