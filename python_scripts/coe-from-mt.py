@@ -623,6 +623,7 @@ if __name__ == '__main__':
                 coe_graph.edges = make_edges(from_nodes, to_nodes)
                 coe_graph.edges = make_edges_with_intermediate_nodes(from_nodes, to_nodes,
                         intermediate=intermediate_nodes, graph=coe_graph)
+                coe_graph.compute_edit_distance()
                 coe_sentence.graphs.append(coe_graph)
                 group_idx += 1
                 # pprint(final_groups)
