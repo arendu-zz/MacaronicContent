@@ -39,7 +39,7 @@ def check_initial_orders(sent_obj, vis_lang):
     sys.stderr.write('en: ' + sent_obj.en + '\n')
     sys.stderr.write(' '.join(vis_toks) + '\n')
     sys.stderr.write(' '.join(vis_node_toks) + '\n')
-    vis_node_toks = [v.split('@@@') for v in vis_node_toks]
+    vis_node_toks = [v.split('~~~') for v in vis_node_toks]
     vis_node_toks= sum(vis_node_toks, []) #flatten list of lists
     #[item for sublist in vis_node_toks for item in sublist]
     #print vis_node_toks

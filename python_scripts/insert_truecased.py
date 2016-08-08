@@ -44,7 +44,17 @@ if __name__ == '__main__':
             else:
                 new_wal_str += '|' + wa + '| '
         new_wa_str = new_wal_str.strip()
-        assert new_wa_str.lower() == wal.strip().lower()
+        new_wa_str = ' '.join(new_wa_str.split())
+        wal = ' '.join(wal.strip().split())
+        if new_wa_str.lower() == wal.strip().lower():
+            pass
+        else:
+            sys.stderr.write('\n')
+            sys.stderr.write(wal.strip())
+            sys.stderr.write('\n')
+            sys.stderr.write(new_wa_str)
+            sys.stderr.write('\n')
+            assert new_wa_str.lower() == wal.strip().lower()
         print new_wa_str
         
 

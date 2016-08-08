@@ -353,10 +353,10 @@ class Sentence(dict):
         new_gid = sorted(gids)[int(len(gids)//2)]
         en_merge_lst.sort()
         de_merge_lst.sort()
-        en_merged =  '@@@'.join([n[1].s for n in en_merge_lst])
+        en_merged =  '~~~'.join([n[1].s for n in en_merge_lst])
         merge_node_en = en_merge_lst[0][1]
         merge_node_en.s = en_merged
-        de_merged =  '@@@'.join([n[1].s for n in de_merge_lst])
+        de_merged =  '~~~'.join([n[1].s for n in de_merge_lst])
         merge_node_de = de_merge_lst[0][1]
         merge_node_de.s = de_merged
         new_graph = Graph(new_gid)
